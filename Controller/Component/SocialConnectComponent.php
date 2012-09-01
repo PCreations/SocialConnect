@@ -6,6 +6,12 @@ class SocialConnectComponent extends Component {
 	
 	private $provider;
 
+	public $controller;
+
+	public function initialize(Controller $controller) {
+		$this->controller = $controller;
+	}
+
 	public function setProvider($provider) {
 		switch($provider) {
 			case 'google':
@@ -51,6 +57,19 @@ class SocialConnectComponent extends Component {
 			)
 		);
 		return Hash::merge(Configure::read('SocialConnect.Google.RegisterCallback'), $params);
+	}
+
+	public function prefillRegisterForm() {
+		//Ajouter chaque paramètre spécifié
+		debug($this->controller->request->query);
+		if(isset($this->controller->request->query['provider'])) {
+			$params = array('email');
+			$fields = Configure::read('SocialConnect.Fields');
+			$userModel = Configure::read('SocialConnect.UserModel');
+			foreach($params as $param) {
+				$this->controller->request->data[$userModel][$fields[$param]] = $this->controller->request->query[$param];
+			}
+		}
 	}
 
 }

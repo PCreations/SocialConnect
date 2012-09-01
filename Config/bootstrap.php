@@ -7,9 +7,17 @@ Configure::write('SocialConnect.Google.OpenidCallback', array(
 	'controller' => 'social_connect',
 	'action' => 'google_connect',
 ));
+
 Configure::write('SocialConnect.Google.RegisterCallback', array(
 	'plugin' => null,
 	'controller' => '/',
 	'action' => 'register',
 ));
+
+Configure::write('SocialConnect.Fields', array(
+	'email' => 'email'
+));
+
+Configure::write('SocialConnect.UserModel', 'AppUser');
+
 ?>
