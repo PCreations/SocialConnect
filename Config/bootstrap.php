@@ -14,6 +14,18 @@ Configure::write('SocialConnect.Google.RegisterCallback', array(
 	'action' => 'register',
 ));
 
+Configure::write('SocialConnect.Facebook.RegisterCallback', array(
+	'plugin' => null,
+	'controller' => '/',
+	'action' => 'register',
+));
+
+Configure::write('SocialConnect.Facebook.Credentials', array(
+	'appId' => '317368205014155',
+	'secret' => '617a666e8842cecacddf7083e923ddb6',
+	'cookie' => true
+));
+
 Configure::write('SocialConnect.Fields', array(
 	'email' => 'email'
 ));

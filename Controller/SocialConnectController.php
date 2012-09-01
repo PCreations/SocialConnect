@@ -8,7 +8,8 @@ class SocialConnectController extends SocialConnectAppController {
 	const GOOGLE_CONNECT_URL = 'https://www.google.com/accounts/o8/id';
 
 	public $components = array(
-		'SocialConnect.SocialConnect'
+		'SocialConnect.SocialConnect',
+		'Session'
 	);
 
 	public function google_connect() {
@@ -27,6 +28,23 @@ class SocialConnectController extends SocialConnectAppController {
 		else {
 			echo 'User has not logged in.';
 		}
+	}
+
+	public function facebook_connect() {
+		$this->SocialConnect->setProvider('facebook');
+
+		debug($this->SocialConnect->isAuth());
+		if(!$this->SocialConnect->isAuth()) {
+			if(isset($_GET['login'])) {
+				//set required params to retrieve
+				$this->SocialConnect->auth();
+			}
+		}
+		else {
+			$this->redirect($this->SocialConnect->registerCallbackUrl());
+		}
+
+		//$this->SocialConnect->logout();
 	}
 	
 }

@@ -1,6 +1,7 @@
 <?php
 
 App::uses('GoogleProvider', 'SocialConnect.Lib');
+App::uses('FacebookProvider', 'SocialConnect.Lib');
 
 class SocialConnectComponent extends Component {
 	
@@ -16,6 +17,9 @@ class SocialConnectComponent extends Component {
 		switch($provider) {
 			case 'google':
 				$this->provider = new GoogleProvider(FULL_BASE_URL);
+				break;
+			case 'facebook':
+				$this->provider = new FacebookProvider(Configure::read('SocialConnect.Facebook.Credentials'));
 				break;
 		}
 	}
@@ -48,6 +52,10 @@ class SocialConnectComponent extends Component {
 		return $this->provider->getEmail();
 	}
 
+	public function logout() {
+		$this->provider->logout();
+	}
+
 	public function registerCallbackUrl() {
 		//Ajouter chaque paramètre spécifié
 		$params = array(
@@ -56,7 +64,8 @@ class SocialConnectComponent extends Component {
 				'email' => $this->getUserEmail()
 			)
 		);
-		return Hash::merge(Configure::read('SocialConnect.Google.RegisterCallback'), $params);
+		$provider = ucfirst($this->getProvider());
+		return Hash::merge(Configure::read('SocialConnect.'.$provider.'.RegisterCallback'), $params);
 	}
 
 	public function prefillRegisterForm() {
