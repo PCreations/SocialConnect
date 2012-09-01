@@ -1,27 +1,32 @@
 <?php
 
 App::uses('SocialConnectAppController', 'SocialConnect.Controller');
+App::uses('Router', 'Cake/Routing');
 
 class SocialConnectController extends SocialConnectAppController {
 
 	const GOOGLE_CONNECT_URL = 'https://www.google.com/accounts/o8/id';
 
 	public $components = array(
-		'SocialConnect.Openid' => array(
-			'accept_google_apps' => true
-		)
+		'SocialConnect.SocialConnect'
 	);
 
-	public function googleConnect() {
-		$realm = 'http://' . $_SERVER['HTTP_HOST'];
-        $returnTo = $realm . '/users/login';
-		try {
-            $this->Openid->authenticate(self::GOOGLE_CONNECT_URL, $returnTo, $realm);
-        } catch (InvalidArgumentException $e) {
-            $this->set('error', 'Invalid OpenID');
-        } catch (Exception $e) {
-            $this->set('error', $e->getMessage());
-        }
+	public function google_connect() {
+		$this->SocialConnect->setProvider('google');
+
+		debug($this->SocialConnect->isAuth());
+		if(!$this->SocialConnect->isAuth()) {
+			if(isset($_GET['login'])) {
+				//set required params to retrieve
+				$this->SocialConnect->auth();
+			}
+		}
+		elseif($this->SocialConnect->isValidate()) {
+			$this->redirect($this->SocialConnect->registerCallbackUrl());
+		}
+		else {
+			echo 'User has not logged in.';
+		}
 	}
 	
 }
