@@ -7,6 +7,18 @@ class GoogleProvider extends LightOpenID implements Provider {
 
 	const GOOGLE_CONNECT_URL = 'https://www.google.com/accounts/o8/id';
 
+	static protected $ax_to_sreg = array(
+        'contact/email'           => 'email',
+        'namePerson/first'        => 'firstname',
+        'namePerson/last'         => 'lastname',
+        'birthDate'               => 'dob',
+        'person/gender'           => 'gender',
+        'contact/postalCode/home' => 'postcode',
+        'contact/country/home'    => 'country',
+        'pref/language'           => 'language',
+        'pref/timezone'           => 'timezone',
+        );
+
 	function __construct($host) {
         parent::__construct($host);
         $this->identity = self::GOOGLE_CONNECT_URL;
@@ -37,53 +49,11 @@ class GoogleProvider extends LightOpenID implements Provider {
 		return $this->identity;
 	}
 
-	public function getEmail() {
-		return $this->getAttribute('email');
-	}
-
-	public function getNickname() {
-		return $this->getAttribute('nickname');
-	}
-
-	public function getFullname() {
-		return $this->getAttribute('fullname');
-	}
-
-	public function getBirthdate() {
-		return $this->getAttribute('dob');
-	}
-
-	public function getGender() {
-		return $this->getAttribute('gender');
-	}
-
-	public function getPostcode() {
-		return $this->getAttribute('postcode');
-	} 
-
-	public function getCountry() {
-		return $this->getAttribute('country');
-	}
-
-	public function getLanguage() {
-		return $this->getAttribute('language');
-	}
-
-	public function getTimezone() {
-		return $this->getAttribute('timezone');
-	}
-	
-	public function getPicture() {
-
-	}
-
 	public function isAuth() {
 		return $this->mode !== null;
 	}
 
 	public function auth() {
-		$this->required = array('contact/email');
-		$this->optional = array('namePerson', 'namePerson/friendly');
 		header('Location: ' . $this->authUrl());
 		exit();
 	}
@@ -96,10 +66,92 @@ class GoogleProvider extends LightOpenID implements Provider {
 		return $this->validate();
 	}
 
-	private function getAttribute($name) {
+	public function setRequiredAttributes($attributes) {
+		$sregToAx = array_flip(self::$ax_to_sreg);
+		foreach($attributes as $attribute) {
+			$this->required[] = $sregToAx[$attribute];
+		}
+	}
+
+	public function setOptionalAttributes($attributes) {
+		$sregToAx = array_flip(self::$ax_to_sreg);
+		foreach($attributes as $attribute) {
+			$this->optional[] = $sregToAx[$attribute];
+		}
+	}
+
+	public function getAllowedAttributes() {
+		return array_flip($this->$ax_to_sreg);
+	}
+
+	public function getRequiredAttributes() {
+		$required = array();
+		foreach($this->required as $attribute) {
+			$required[] = self::$ax_to_sreg[$attribute];
+		}
+		return $required;
+	}
+
+	public function getOptionalAttributes() {
+		$optional = array();
+		foreach($this->optional as $attribute) {
+			$optional[] = self::$ax_to_sreg[$attribute];
+		}
+		return $optional;
+		return $this->optional;
+	}
+
+	protected function axParams()
+    {
+        $params = array();
+        if ($this->required || $this->optional) {
+            $params['openid.ns.ax'] = 'http://openid.net/srv/ax/1.0';
+            $params['openid.ax.mode'] = 'fetch_request';
+            $this->aliases  = array();
+            $counts   = array();
+            $required = array();
+            $optional = array();
+            foreach (array('required','optional') as $type) {
+                foreach ($this->$type as $alias => $field) {
+                    if (is_int($alias)) $alias = self::$ax_to_sreg[$field];
+                    $this->aliases[$alias] = 'http://axschema.org/' . $field;
+                    if (empty($counts[$alias])) $counts[$alias] = 0;
+                    $counts[$alias] += 1;
+                    ${$type}[] = $alias;
+                }
+            }
+            foreach ($this->aliases as $alias => $ns) {
+                $params['openid.ax.type.' . $alias] = $ns;
+            }
+            foreach ($counts as $alias => $count) {
+                if ($count == 1) continue;
+                $params['openid.ax.count.' . $alias] = $count;
+            }
+
+            # Don't send empty ax.requied and ax.if_available.
+            # Google and possibly other providers refuse to support ax when one of these is empty.
+            if($required) {
+                $params['openid.ax.required'] = implode(',', $required);
+            }
+            if($optional) {
+                $params['openid.ax.if_available'] = implode(',', $optional);
+            }
+        }
+        return $params;
+    }
+
+	public function getAttribute($name) {
 		$sregToAx = array_flip(self::$ax_to_sreg);
 		$attributes = $this->getAttributes();
 		return isset($attributes[$sregToAx[$name]]) ? $attributes[$sregToAx[$name]] : '';
+	}
+
+	public function getRetrievedAttributes() {
+		$attributes = array();
+		foreach($this->getAttributes() as $name => $value) {
+			$attributes[self::$ax_to_sreg[$name]] = $value;
+		}
+		return $attributes;
 	}
 }
 

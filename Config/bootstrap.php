@@ -23,11 +23,12 @@ Configure::write('SocialConnect.Facebook.RegisterCallback', array(
 Configure::write('SocialConnect.Facebook.Credentials', array(
 	'appId' => '317368205014155',
 	'secret' => '617a666e8842cecacddf7083e923ddb6',
-	'cookie' => true
+	'cookie' => false
 ));
 
 Configure::write('SocialConnect.Fields', array(
-	'email' => 'email'
+	'email' => 'email',
+	'country' => 'country'
 ));
 
 Configure::write('SocialConnect.UserModel', 'AppUser');

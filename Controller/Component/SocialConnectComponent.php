@@ -48,37 +48,52 @@ class SocialConnectComponent extends Component {
 		return $this->provider->getId();
 	}
 
-	public function getUserEmail() {
-		return $this->provider->getEmail();
+	public function setRequiredAttributes($attributes) {
+		$this->provider->setRequiredAttributes($attributes);
+	}
+
+	public function setOptionalAttributes($attributes) {
+		$this->provider->setOptionalAttributes($attributes);
 	}
 
 	public function logout() {
 		$this->provider->logout();
 	}
 
+	public function getUserInfo($name) {
+		return $this->provider->getAttribute($name);
+	}
+
 	public function registerCallbackUrl() {
-		//Ajouter chaque paramètre spécifié
+		$provider = $this->getProvider();
+		$attributes = $this->provider->getRetrievedAttributes();
 		$params = array(
-			'?' => array(
-				'provider' => $this->getProvider(),
-				'email' => $this->getUserEmail()
+			'?' => array_merge(
+				array(
+					'provider' => $provider,
+				),
+				$attributes
 			)
 		);
-		$provider = ucfirst($this->getProvider());
-		return Hash::merge(Configure::read('SocialConnect.'.$provider.'.RegisterCallback'), $params);
+		return Hash::merge(Configure::read('SocialConnect.'.ucfirst($provider).'.RegisterCallback'), $params);
 	}
 
 	public function prefillRegisterForm() {
-		//Ajouter chaque paramètre spécifié
 		debug($this->controller->request->query);
 		if(isset($this->controller->request->query['provider'])) {
-			$params = array('email');
+			unset($this->controller->request->query['provider']);
 			$fields = Configure::read('SocialConnect.Fields');
 			$userModel = Configure::read('SocialConnect.UserModel');
-			foreach($params as $param) {
-				$this->controller->request->data[$userModel][$fields[$param]] = $this->controller->request->query[$param];
+			foreach($this->controller->request->query as $name => $value) {
+				//if(!in_array($name, $this->getAllowedAttributes) continue;
+				$fieldName = isset($fields[$name]) ? $fields[$name] : $name;
+				$this->controller->request->data[$userModel][$fieldName] = $value;
 			}
 		}
+	}
+
+	private function getAllAttributesFromProvider() {
+		return array_merge($this->provider->getRequiredAttributes(), $this->provider->getOptionalAttributes());
 	}
 
 }
